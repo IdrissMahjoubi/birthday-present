@@ -20,6 +20,7 @@ Restart
         "button, a, input, textarea, select, summary, [data-interactive]";
       let activeIndex = 0;
       let audioUnlocked = false;
+      let autoplayBlocked = false;
 
       const setAudioToggleLabel = () => {
         if (!(audioToggle instanceof HTMLButtonElement)) {
@@ -35,8 +36,16 @@ Restart
         );
       };
 
-      const tryPlayBackgroundAudio = () => {
-        if (!(backgroundAudio instanceof HTMLAudioElement) || audioUnlocked) {
+      const tryPlayBackgroundAudio = (forceUnmute = false) => {
+        if (!(backgroundAudio instanceof HTMLAudioElement)) {
+          return;
+        }
+
+        if (forceUnmute) {
+          backgroundAudio.muted = false;
+        }
+
+        if (audioUnlocked && !autoplayBlocked) {
           return;
         }
 
@@ -44,9 +53,12 @@ Restart
           .play()
           .then(() => {
             audioUnlocked = true;
+            autoplayBlocked = false;
+            setAudioToggleLabel();
           })
           .catch(() => {
             backgroundAudio.muted = true;
+            autoplayBlocked = true;
             setAudioToggleLabel();
 
             return backgroundAudio.play().then(() => {
@@ -160,8 +172,8 @@ Restart
 
       setAudioToggleLabel();
       tryPlayBackgroundAudio();
-      window.addEventListener("pointerdown", tryPlayBackgroundAudio, { once: true });
-      window.addEventListener("keydown", tryPlayBackgroundAudio, { once: true });
+      window.addEventListener("pointerdown", () => tryPlayBackgroundAudio(true), { once: true });
+      window.addEventListener("keydown", () => tryPlayBackgroundAudio(true), { once: true });
       render();
     })();
   </script>  </main> </body></html>
